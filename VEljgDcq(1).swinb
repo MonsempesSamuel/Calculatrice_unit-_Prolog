@@ -1,0 +1,901 @@
+<div class="notebook">
+
+<div class="nb-cell program" data-background="true" name="p38">
+:- discontiguous nbu/5.
+</div>
+
+<div class="nb-cell html" name="htm1">
+
+</div>
+
+<div class="nb-cell html" name="htm2">
+
+</div>
+
+<div class="nb-cell html" name="htm3">
+<h1><u><b>Projet de Prolog: Calculatrice à unité</b></u></h1>
+</div>
+
+<div class="nb-cell html" name="htm4">
+Par Samuel Monsempes
+</div>
+
+<div class="nb-cell query" data-run="onload" name="q1">
+interface("","","",0).
+</div>
+
+<div class="nb-cell html" name="htm5">
+<h2><u>1) Choix de la grammaire:</u></h2>
+</div>
+
+<div class="nb-cell html" name="htm6">
+s -&gt; nbu   <br>
+s -&gt; nbu ope nbu    <br>
+   s -&gt; nbu ope LS nbu   <br>
+   ls -&gt; nbu ope LS   <br>
+   ls -&gt; nbu ope   <br>
+   ope -&gt; + ou - ou * ou / ou %           <br>
+   nbu -&gt; ( S )                       <br>
+   nbu -&gt; nb unite                       <br>
+   nbu -&gt; nb grandeur u                      <br>
+   nbu -&gt; nb                             <br>
+   nb -&gt; nombre . nombre                 <br>
+   nb -&gt; nombre                          <br>
+   u        -&gt; g ou h ou b ou o ou m ou s ou min              <br>
+   grandeur -&gt; k ou m ou M ou G   <br>
+</div>
+
+<div class="nb-cell html" name="htm7">
+<h2><u>2) Choix des calculs possibles:</u></h2>
+</div>
+
+<div class="nb-cell html" name="htm8">
+<p>Par simplification, nous avons préféré nous concentrer d'abord sur une caculatrice fonctionnelle avant 
+  d'ajouter des unités.<br>Ainsi, toutes les fonctionnalités sont disponibles sur cette calculatrice (*, +, -, /, %),
+avec priorités opératoires et parenthèses. <br>Nous avons limité les calculs entres les unités 
+  (On n'effectue le calcul que si les unités sont identiques).</p>
+</div>
+
+<div class="nb-cell html" name="htm39">
+<h2><u>3) Prédicats de simplification de lecture</u></h2>
+</div>
+
+<div class="nb-cell html" name="htm63">
+Règle pour vérifier si le paramètre est zéro
+</div>
+
+<div class="nb-cell program" data-background="true" name="p17">
+zero(0).
+</div>
+
+<div class="nb-cell html" name="htm60">
+Tout les nombres en code ASCII.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p20">
+estnb(48).
+estnb(49).
+estnb(50).
+estnb(51).
+estnb(52).
+estnb(53).
+estnb(54).
+estnb(55).
+estnb(56).
+estnb(57).
+</div>
+
+<div class="nb-cell html" name="htm61">
+Toutes les opérandes en code ASCII.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p19">
+estop(37).
+estop(42).
+estop(43).
+estop(45).
+estop(47).
+</div>
+
+<div class="nb-cell program" data-background="true" name="p18">
+modulo(37).
+fois(42).
+plus(43).
+moins(45).
+divise(47).
+</div>
+
+<div class="nb-cell html" name="htm62">
+Le point en code ASCII.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p21">
+estpoint(46).
+</div>
+
+<div class="nb-cell html" name="htm64">
+Les unités en code ASCII.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p22">
+bits(98).
+grammes(103).
+heure(104).
+mètres(109).
+minute(109,105,110).
+octets(111).
+secondes(115).
+</div>
+
+<div class="nb-cell html" name="htm65">
+Les grandeurs en code ASCII.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p23">
+milli(109).
+kilo(107).
+mega(77).
+giga(71).
+</div>
+
+<div class="nb-cell html" name="htm9">
+<h2><u>4) Partie reconnaissance de grammaire</u></h2>
+</div>
+
+<div class="nb-cell html" name="htm13">
+<h3>S</h3>
+</div>
+
+<div class="nb-cell html" name="htm10">
+Correspond aux règles de grammaire suivantes: <br>
+s -&gt; nbu ope nbu    <br>
+s -&gt; nbu ope LS nbu   <br>
+s -&gt; nbu   <br>
+</div>
+
+<div class="nb-cell html" name="htm11">
+s(L,LR,FL,U,K) L la liste de départ, LR la liste résultat, FL la fin de la liste, U l'unité, K la puissance du calcul, nous y reviendrons plus tard.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p1">
+s(L,[NB,OP,NBF],FL,U,K):-
+    nbu(L,U,NB,[E|L2],I),
+    ope(E,OP),
+    nbu(L2,U,NBF,FL,J),
+    plus(K,I,J),
+    fl(FL).
+
+
+s(L,[NB,OP|LR],FL,U,K):-
+    nbu(L,U,NB,[E|L2],I),
+    ope(E,OP),
+    ls(L2,LR,NBF,U,L3,H),
+    nbu(L3,U,NBF,FL,J),
+    plus(I2,I,J),
+    plus(K,I2,H),
+    fl(FL).
+    
+s(L,[NB],FL,U,K):-
+    nbu(L,U,NB,FL,K),
+    fl(FL).
+</div>
+
+<div class="nb-cell html" name="htm12">
+La règle fl vérifie que FL est bien la fin de la liste.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p2">
+fl([]).
+</div>
+
+<div class="nb-cell html" name="htm14">
+<h3>LS</h3>
+</div>
+
+<div class="nb-cell html" name="htm15">
+Correspond aux règles de grammaire suivantes: <br>
+ls -&gt; nbu ope   <br>ls -&gt; nbu ope LS   <br>
+</div>
+
+<div class="nb-cell html" name="htm16">
+ls(L,LR,NBF,U,FL,K)  L la liste de départ, LR la liste résultat, NBF nombre final, U l'unité, NBF le nombre de fin de liste, FL la fin de la liste, K la puissance du calcul.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p3">
+ls(L,[NB,OP,NBF],NBF,U,FL,K):-
+    nbu(L,U,NB,[E|FL],K),
+    ope(E,OP).
+ 
+ls(L,[NB,OP|SL],NBF,U,FL,K):-
+    nbu(L,U,NB,[E|L2],I),
+    ope(E,OP),
+    ls(L2,SL,NBF,U,FL,J),
+    plus(K,I,J).
+</div>
+
+<div class="nb-cell html" name="htm17">
+<h3>NBU</h3>
+</div>
+
+<div class="nb-cell html" name="htm18">
+Correspond aux règles de grammaire suivantes: <br>
+nbu -&gt; ( S )                       <br>
+   nbu -&gt; nb                             <br>
+   nbu -&gt; nb unite                       <br>
+   nbu -&gt; nb grandeur unite                       <br>
+</div>
+
+<div class="nb-cell html" name="htm19">
+nbu(L,U,NB,FL) L la liste de départ, U l'unité, NB le nombre résultat, FL la fin de la liste, K la puissance du calcul.
+</div>
+
+<div class="nb-cell html" name="htm33">
+<h4>Cas des parenthèses</h4>
+</div>
+
+<div class="nb-cell html" name="htm23">
+Gestion des parenthèses. Ici, on retire les parenthèses, on effectue 
+le calcul à l'intérieur des parenthèses et on retourne le nombre via NB et la puissance du calcul via K.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p4">
+nbu([E|L],U,NB,L2,K):-   
+    ouvrante(E),		 
+    lnb(L,LR,L2),		 
+    \+fl(LR),
+    calcul(LR,NB,U,K).
+</div>
+
+<div class="nb-cell html" name="htm22">
+lnb(L,LR,FL) L la liste de départ, LR la liste résultat; le calcul à l'intérieur des parenthèses, 
+FL la fin de la liste; la suite de la liste après les parenthèses.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p6">
+fermante(41).
+ouvrante(40).
+
+lnb([E|L],[],L):-
+    fermante(E).
+</div>
+
+<div class="nb-cell html" name="htm24">
+Ici, on vérifie qu'il n'y ait pas de parenthèse entre les parenthèses.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p7">
+lnb([E|L],LR,L2):-			
+    ouvrante(E),
+    lnb(L,K,I),
+    append([40|K],[41],K2),
+    append(K2,L3,LR),
+    lnb(I,L3,L2).
+</div>
+
+<div class="nb-cell html" name="htm25">
+Le compilateur ayant pour une raison obscure, la tendance à ne prendre
+ que les dernières parenthèses ouvrantes et fermantes, il faut vérifier
+ que E ne soit ni une parenthèse ouvrante ni une fermante.<br>Exemple, sans ces gardes-fous: (1+1)+(1+1) 
+renverrait 1+1)+(1+1 , [] et non 1+1 , +(1+1).
+</div>
+
+<div class="nb-cell program" data-background="true" name="p8">
+lnb([E|L],[E|LR],L2):-		
+    \+fermante(E),			
+    \+ouvrante(E),			
+    lnb(L,LR,L2).
+</div>
+
+<div class="nb-cell html" name="htm27">
+<h4>Cas des unités horaires</h4>
+</div>
+
+<div class="nb-cell html" name="htm29">
+Nous avons choisi de séparer les unités horaires des autres unités car les kiloheures et les kilosecondes n'existent pas.
+
+<br>
+Les minutes et les heures sont transformées en secondes, la fonction grandeurh nous donne le facteur multiplicatif.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p9">
+nbu(L,s,R,FL,0):-
+    nb(L,[M,I,N|FL],NB),
+    grandeurh(75,F),
+    u(M,I,N,s),
+    fois(R,NB,F),
+    correctFL(FL).
+
+nbu(L,s,R,FL,0):-
+    nb(L,[U|FL],NB),
+    grandeurh(U,F),
+    u(U,s),
+    fois(R,NB,F),
+    correctFL(FL).
+</div>
+
+<div class="nb-cell html" name="htm28">
+grandeurh(E,F) E la grandeur en code ASCII, F le facteur multiplicatif résultat.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p11">
+grandeurh(E,1):-
+    secondes(E).
+    
+grandeurh(75,60).
+    
+grandeurh(E,3600):-
+    heure(E).
+</div>
+
+<div class="nb-cell html" name="htm32">
+<h4>Cas général</h4>
+</div>
+
+<div class="nb-cell html" name="htm34">
+Cas où il n'y a pas de grandeur.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p12">
+nbu(L,Unit,NB,FL,0):-
+    nb(L,[U|FL],NB),
+    u(U,Unit),
+    \+ests(Unit),
+    correctFL(FL).
+</div>
+
+<div class="nb-cell html" name="htm35">
+Cas où il y a une grandeur.<br> Les kilo, méga, giga et milli sont transformés en unité de base.<br>
+La fonction grandeur nous donne le facteur multiplicatif.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p13">
+nbu(L,Unit,R,FL,0):-
+    nb(L,[G,U|FL],NB),
+    grandeur(G,F),
+    u(U,Unit),
+    fois(R,NB,F),
+    \+ests(Unit),
+    correctFL(FL).
+</div>
+
+<div class="nb-cell html" name="htm36">
+grandeur(E,F) E la grandeur en code ASCII, F le facteur multiplicatif résultat.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p14">
+grandeur(E,0.001):-
+    milli(E).
+    
+grandeur(E,1000):-
+    kilo(E).
+    
+grandeur(E,1000000):-
+    mega(E).
+    
+grandeur(E,1000000000):-
+    giga(E).
+</div>
+
+<div class="nb-cell html" name="htm83">
+Vérifie que ce n'est pas une secondes
+</div>
+
+<div class="nb-cell program" data-background="true" name="p39">
+ests(s).
+</div>
+
+<div class="nb-cell html" name="htm38">
+correctFL vérifie que c'est bien une fin de nombre correcte, terminant par une liste vide ou une opération.
+</div>
+
+<div class="nb-cell html" name="htm41">
+Utile pour ne pas confondre milli et mètre ou min et mètre.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p16">
+correctFL([O|_L]):-
+    estop(O).
+    
+correctFL([]).
+</div>
+
+<div class="nb-cell html" name="htm26">
+<h4>Cas de nb sans unité</h4>
+</div>
+
+<div class="nb-cell program" data-background="true" name="p5">
+nbu(L,'',NB,FL,0):-
+    nb(L,FL,NB),
+    correctFL(FL).
+</div>
+
+<div class="nb-cell html" name="htm30">
+<h4>Cas des octets</h4>
+</div>
+
+<div class="nb-cell html" name="htm31">
+Les octets sont transformés en bits.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p10">
+nbu(L,b,R,FL,0):-
+    nb(L,[U|FL],NB),
+    u(U,o),
+    fois(R,NB,8),
+    correctFL(FL).
+
+nbu(L,b,R,FL,0):-
+    nb(L,[G,U|FL],NB),
+    grandeur(G,F),
+    u(U,o),
+    fois(R1,NB,F),
+    fois(R,R1,8),
+    correctFL(FL).
+</div>
+
+<div class="nb-cell html" name="htm40">
+<h3>U</h3>
+</div>
+
+<div class="nb-cell html" name="htm42">
+Correspond à la règles de grammaire suivante: <br>
+u        -&gt; g ou h ou b ou o ou m ou s ou min              <br>
+</div>
+
+<div class="nb-cell html" name="htm43">
+u(E,U) E l'unité en code ASCII, U l'unité résultat.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p24">
+u(E,m):-
+    mètres(E).
+    
+u(E,b):-
+    bits(E).
+ 
+u(E,g):-
+    grammes(E).
+    
+u(E,o):-
+    octets(E).
+    
+u(E,s):-
+    heure(E).
+    
+u(E,s):-
+    secondes(E).
+    
+u(M,I,N,s):-
+    minute(M,I,N).
+</div>
+
+<div class="nb-cell html" name="htm44">
+<h3>NB</h3>
+</div>
+
+<div class="nb-cell html" name="htm46">
+Correspond aux règles de grammaire suivantes: <br>
+nb -&gt; nombre . nombre                 <br>
+   nb -&gt; nombre                          <br>
+</div>
+
+<div class="nb-cell html" name="htm45">
+nb(L,FL,E) L la liste de départ, FL la fin de la liste, E le nombre résultat.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p25">
+nb(L,FL,E):-                  
+    estnombre(L,[E1|FL1],R1),
+    estpoint(E1),
+    estnombre(FL1,FL,R2),
+    transformefloat(R1,R2,E).
+
+nb(L,[E1|FL],E):-
+    estnombre(L,[E1|FL],E),
+    \+estpoint(E1).
+    
+nb(L,[],E):-
+    estnombre(L,[],E).
+</div>
+
+<div class="nb-cell program" data-background="true" name="p26">
+transformefloat(E,X,R):-
+    number_string(E,E1),
+    number_string(X,X1),
+    string_concat(E1,".",E2),
+    string_concat(E2,X1,AUX),
+    number_string(R,AUX).
+
+estnombre(L,FL,R):-
+    nombre(L,L2,FL),
+    string_codes(SR,L2),
+    number_string(R,SR).
+    
+nombre([E|L],[E|L2],R):-
+    estnb(E),
+    nombre(L,L2,R).
+    
+nombre([E|L],[],[E|L]):-
+    \+estnb(E).
+    
+nombre([],[],[]).
+</div>
+
+<div class="nb-cell html" name="htm47">
+<h3>OPE</h3>
+</div>
+
+<div class="nb-cell html" name="htm48">
+Correspond à la règle de grammaire suivante: <br>
+ope -&gt; + ou - ou * ou / ou %
+</div>
+
+<div class="nb-cell html" name="htm49">
+ope(E,OPE) E l'opérande en code ASCII, OPE l'opérande résultat.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p27">
+ope(E,modulo):-
+    modulo(E).
+    
+ope(E,fois):-
+    fois(E).
+    
+ope(E,plus):-
+    plus(E).
+    
+ope(E,moins):-
+    moins(E).
+    
+ope(E,divise):-
+    divise(E).
+</div>
+
+<div class="nb-cell html" name="htm50">
+<h2><u>5) Partie calculatoire</u></h2>
+</div>
+
+<div class="nb-cell html" name="htm53">
+<h3>Fonctions de base</h3>
+</div>
+
+<div class="nb-cell html" name="htm54">
+La division pour les flottants ne fonctionnant pas en Prolog, on transforme les flottants en entier.
+</div>
+
+<div class="nb-cell html" name="htm57">
+On vérifie que le diviseur est différent de 0.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p29">
+plus(R,E1,E2):-
+    R is E1+E2.
+    
+moins(R,E1,E2):-
+    R is E1-E2.
+    
+fois(R,E1,E2):-
+    R is E1*E2.
+
+divise(R,E1,E2):-    
+    \+zero(E2),
+    fois(E3,E1,1000000000000),
+    E5 is round(E3),
+    fois(E4,E2,1000000000000),
+    E6 is round(E4),
+    R is E5/E6.
+    
+modulo(R,E1,E2):-
+    \+zero(E2),
+    integer(E1),
+    integer(E2),
+    R is mod(E1,E2).
+</div>
+
+<div class="nb-cell html" name="htm51">
+<h3>Règle calcul</h3>
+</div>
+
+<div class="nb-cell html" name="htm66">
+Effectue le calcul à partir d'une liste en ASCII.
+</div>
+
+<div class="nb-cell html" name="htm52">
+calcul(L,R,U,K) L la liste de base, R le résultat du calcul, U l'unité, K la puissance du calcul.
+</div>
+
+<div class="nb-cell html" name="htm67">
+On vérifie que la liste correspond à la grammaire avec la règle s, 
+puis on effectue les multiplications, les divisions et les modulos via calcprio
+et enfin on effectue les additions et soustractions.<br>
+On additionne les puissances de calcul K et I remontées respectivement via s (nbu avec parenthèses) 
+et calcprio.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p28">
+calcul(L,R,U,K):-
+    s(L,LR,[],U,J),
+    calcprio(LR,LR2,I),
+    plus(K,I,J),
+    calc(LR2,R).
+</div>
+
+<div class="nb-cell html" name="htm55">
+Si s n'est pas vrai alors le résultat du calcul donne 'Expression incorrecte'<br>
+Exemple: azdazdazd
+</div>
+
+<div class="nb-cell program" data-background="true" name="p30">
+calcul(L,'Expression incorrecte','',0):-
+    \+s(L,_LR,[],_U,_J).
+</div>
+
+<div class="nb-cell html" name="htm56">
+Si calcprio n'est pas vrai alors le résultat du calcul donne 'Calcul impossible'<br>
+Exemple: 10/0
+</div>
+
+<div class="nb-cell program" data-background="true" name="p31">
+calcul(L,'Calcul impossible','',0):-
+    s(L,LR,_FL,_U,_J),
+    \+calcprio(LR,_LR2,_I).
+</div>
+
+<div class="nb-cell html" name="htm58">
+<h3> Règle calcprio</h3>
+</div>
+
+<div class="nb-cell html" name="htm68">
+Effectue les multiplications, les divisions, les modulos et remonte la puissance du calcul.
+</div>
+
+<div class="nb-cell html" name="htm59">
+calcprio(L,LR,K)L la liste de base, LR la liste résultat, K la puissance du calcul.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p32">
+calcprio([R],[R],0).
+
+calcprio([E1,fois,E2|L],LR,I):-
+    fois(E3,E1,E2),
+    calcprio([E3|L],LR,J),
+    plus(I,J,1).
+
+calcprio([E1,divise,E2|L],LR,I):-
+    divise(E3,E1,E2),
+    calcprio([E3|L],LR,J),
+    moins(I,J,1).
+
+calcprio([E1,modulo,E2|L],LR,I):-
+    modulo(E3,E1,E2),
+    calcprio([E3|L],LR,I).
+
+calcprio([E1,plus|L],[E1,plus|LR],I):-
+    calcprio(L,LR,I).
+    
+calcprio([E1,moins|L],[E1,moins|LR],I):-
+    calcprio(L,LR,I).
+</div>
+
+<div class="nb-cell html" name="htm69">
+<h3> Règle calc</h3>
+</div>
+
+<div class="nb-cell html" name="htm70">
+Effectue les additions et soustractions.
+</div>
+
+<div class="nb-cell html" name="htm71">
+calc(L,R) L la liste de base, R le nombre résultat.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p33">
+calc([R],R).
+
+calc([E1,plus,E2|L],R):-
+    plus(E3,E1,E2),
+    calc([E3|L],R).
+
+calc([E1,moins,E2|L],R):-
+    moins(E3,E1,E2),
+    calc([E3|L],R).
+</div>
+
+<div class="nb-cell html" name="htm72">
+<h2><u>6) Partie interface et gestion des entrées utilisateur</u></h2>
+</div>
+
+<div class="nb-cell html" name="htm74">
+interface(L,E,U,P) L la ligne de base, E le nombre résultat du calcul précédent, U l'unité, 
+P la puissance du calcul précédent.
+</div>
+
+<div class="nb-cell html" name="htm80">
+La règle "clear" ne fonctionne pas sur SWISH je l'ai néanmoins laissé ici.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p34">
+interface("stop",_EXPR,_UNIT,_EXPO) :- 
+    %writeln('\e[H\e[2J'), %clear
+    writeln('Merci de votre utilisation !!!').
+    
+interface(LIGNE,EXPR,UNIT,EXPO) :- 
+    %writeln('\33\[H\33\[2J'), %clear
+    format(' _____________________~n'),
+    format('|  _________________  |~n'),
+    format('| |'),
+    writeln(LIGNE),
+    format('| |'),
+    write(EXPR),
+    milieu_interface(UNIT,EXPO).
+</div>
+
+<div class="nb-cell html" name="htm78">
+Affiche l'unité en fonction de s'il y a une unité et s'il y a une puissance.
+</div>
+
+<div class="nb-cell html" name="htm75">
+milieu_interface(U,P) U l'unité, P la puissance du calcul.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p35">
+milieu_interface(UNIT,1) :- 
+    write(" "),
+    writeln(UNIT),
+    fin_interface.
+  
+
+milieu_interface('',_I) :- 
+    writeln(""),
+    fin_interface.
+
+milieu_interface(_UNIT,0) :- 
+    writeln(""),
+    fin_interface.
+  
+milieu_interface(UNIT,EXPO) :- 
+    write(" "),
+    write(UNIT),
+    writeln(EXPO),
+    fin_interface.
+</div>
+
+<div class="nb-cell html" name="htm79">
+Demande à l'utilisateur un nouveau calcul.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p36">
+fin_interface:-
+    format('| |_________________| |    Unités prises en compte: bits(b), grammes(g), ~n'),
+    format('|  ___ ___ ___   ___  |    secondes(s), heure(h), mètres(m), minute(min),~n'),
+    format('| | 7 | 8 | 9 | | + | |    octets(o).~n'),
+    format('| |___|___|___| |___| |~n'),
+    format('| | 4 | 5 | 6 | | - | |    Ordres de grandeur pris en compte: milli(m),~n'),
+    format('| |___|___|___| |___| |    kilo(k), mega(M),giga(G).~n'),
+    format('| | 1 | 2 | 3 | | * | |~n'),
+    format('| |___|___|___| |___| |    Opérations prise en compte: +, -, *, /, %~n'),
+    format('| | . | 0 | = | | / | |~n'),
+    format('| |___|___|___| |___| |    Pour s\'arrêter écrire stop~n'),
+    format('|_____________________|~n'),    
+    format('Calcul à faire ? ~n'), 
+    read_line_to_codes(user_input,Entree),
+    supprimerespace(Entree,L),
+    string_codes(L2,L),
+    calcul(L,R,U,J),
+    plus(K,J,1),
+    interface(L2,R,U,K).
+</div>
+
+<div class="nb-cell html" name="htm77">
+Supprime les espaces de la ligne entrée par l'utilisateur.
+</div>
+
+<div class="nb-cell html" name="htm76">
+supprimerespace(L,LR) L la liste de base, LR la liste résultat.
+</div>
+
+<div class="nb-cell program" data-background="true" name="p37">
+espace(32).
+
+supprimerespace([],[]).
+
+supprimerespace([E|L],R):-
+    espace(E),
+    supprimerespace(L,R).
+
+supprimerespace([E|L],[E|R]):-
+    \+espace(E),
+    supprimerespace(L,R).
+</div>
+
+<div class="nb-cell html" name="htm37">
+<h2><u>7) Test</u></h2>
+</div>
+
+<div class="nb-cell html" name="htm81">
+On rajoute une règle pour tester plus facilement.
+</div>
+
+<div class="nb-cell program" data-background="true" data-singleline="true" name="p15">
+test(E):-    
+    string_codes(E,Entree),
+    supprimerespace(Entree,L),
+    string_codes(L2,L),
+    calcul(L,R,U,J),
+    plus(K,J,1),
+    interface(L2,R,U,K).
+</div>
+
+<div class="nb-cell html" name="htm85">
+<h3> Test fonctionnant</h3>
+</div>
+
+<div class="nb-cell query" name="q2">
+test("1 km").
+</div>
+
+<div class="nb-cell query" name="q4">
+test("(1h+(1min+(1s)))").
+</div>
+
+<div class="nb-cell query" name="q5">
+test("(1mm+1m)*3m").
+</div>
+
+<div class="nb-cell query" name="q6">
+test("(10b/                    1o)").
+</div>
+
+<div class="nb-cell query" name="q12">
+test("(1g+1g)/3.3g+(5g+2mg)-4.5kg+1Gg*3g").
+</div>
+
+<div class="nb-cell query" name="q13">
+test("(10/5)+(2/10)").
+</div>
+
+<div class="nb-cell html" name="htm84">
+<h3> Test ne fonctionnant pas (à juste titre)</h3>
+</div>
+
+<div class="nb-cell query" name="q3">
+test("10%1.1").
+</div>
+
+<div class="nb-cell query" name="q7">
+test("(10/0)").
+</div>
+
+<div class="nb-cell query" name="q8">
+test("").
+</div>
+
+<div class="nb-cell query" name="q9">
+test("(1+1").
+</div>
+
+<div class="nb-cell query" name="q10">
+test("1+-1").
+</div>
+
+<div class="nb-cell query" name="q11">
+test("1ks").
+</div>
+
+<div class="nb-cell query" name="q14">
+test("1s+1m").
+</div>
+
+<div class="nb-cell html" name="htm73">
+
+</div>
+
+<div class="nb-cell html" name="htm21">
+
+</div>
+
+<div class="nb-cell html" name="htm20">
+
+</div>
+
+</div>
